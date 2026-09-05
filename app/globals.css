@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Order-ticket theme: warm paper, ink, one working accent (bottle green),
+   brick red reserved only for problems (complaints). No dark mode — this
+   app lives on one screen, at one table. */
+:root {
+  --color-paper: #f2eee3;
+  --color-paper-raised: #fbf9f3;
+  --color-ink: #23241f;
+  --color-ink-soft: #5c5a4f;
+  --color-line: #d8d2c0;
+  --color-accent: #3f5e4a;
+  --color-accent-soft: #e4ebe6;
+  --color-alert: #a23b2e;
+  --color-alert-soft: #f4e4e1;
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-work-sans);
+  --font-data: var(--font-jetbrains-mono);
+}
+
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-line: var(--color-line);
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-alert: var(--color-alert);
+  --color-alert-soft: var(--color-alert-soft);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-data: var(--font-data);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.ticket {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+}
+
+.tear-line {
+  border-top: 1px dashed var(--color-line);
+}
+
