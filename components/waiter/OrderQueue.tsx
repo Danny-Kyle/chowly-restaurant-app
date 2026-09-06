@@ -42,7 +42,11 @@ export default function OrderQueue({
               <p className="font-data">{formatNaira(order.total_order_amount)}</p>
               <span
                 className={`text-xs uppercase font-data px-2 py-0.5 rounded-sm ${
-                  order.status === 'Served' ? 'bg-accent-soft text-accent' : 'bg-line/40'
+                  order.status === 'Served'
+                    ? 'bg-accent-soft text-accent'
+                    : order.status === 'Cancelled'
+                      ? 'bg-alert-soft text-alert'
+                      : 'bg-line/40'
                 }`}
               >
                 {order.status}

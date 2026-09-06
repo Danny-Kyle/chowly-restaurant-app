@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react'
 import type { Order, OrderItem, Staff } from '@/lib/types'
 import { formatNaira } from '@/lib/format'
+import CancelOrderButton from '../CancelOrderButton'
 
 export default function OrderAssignForm({
   orderId,
   onBack,
-  onServed,
+  onResolved,
 }: {
   orderId: string
   onBack: () => void
-  onServed: () => void
+  onResolved: () => void
 }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [items, setItems] = useState<OrderItem[]>([])
@@ -66,7 +67,7 @@ export default function OrderAssignForm({
         body: JSON.stringify({ action: 'serve' }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      onServed()
+      onResolved()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -104,7 +105,8 @@ export default function OrderAssignForm({
               <select
                 value={currentStaffId}
                 onChange={(e) => handleAssign(item, e.target.value)}
-                className="mt-2 w-full border border-line bg-paper-raised rounded-sm px-3 py-2"
+                disabled={order.status !== 'Pending'}
+                className="mt-2 w-full border border-line bg-paper-raised rounded-sm px-3 py-2 disabled:opacity-60"
               >
                 <option value="">Assign {isDrink ? 'bartender' : 'chef'}…</option>
                 {options.map((s) => (
@@ -120,16 +122,25 @@ export default function OrderAssignForm({
 
       {error && <p className="text-alert text-sm mb-2">{error}</p>}
 
-      {order.status === 'Served' ? (
+      {order.status === 'Cancelled' ? (
+        <div className="ticket px-4 py-3 text-center text-alert font-medium">
+          Cancelled{order.cancelled_by ? ` by the ${order.cancelled_by}` : ''}
+        </div>
+      ) : order.status === 'Served' ? (
         <div className="ticket px-4 py-3 text-center text-accent font-medium">Served</div>
       ) : (
-        <button
-          onClick={handleServe}
-          disabled={serving}
-          className="w-full bg-accent text-paper-raised rounded-sm py-2.5 font-medium disabled:opacity-60"
-        >
-          {serving ? 'Marking served…' : 'Mark as served'}
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={handleServe}
+            disabled={serving}
+            className="w-full bg-accent text-paper-raised rounded-sm py-2.5 font-medium disabled:opacity-60"
+          >
+            {serving ? 'Marking served…' : 'Mark as served'}
+          </button>
+          <div className="text-center">
+            <CancelOrderButton orderId={order.order_id} cancelledBy="waiter" onCancelled={onResolved} />
+          </div>
+        </div>
       )}
     </div>
   )

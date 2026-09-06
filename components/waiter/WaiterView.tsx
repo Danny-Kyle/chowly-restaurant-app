@@ -15,7 +15,7 @@ export default function WaiterView() {
         <OrderAssignForm
           orderId={selectedOrderId}
           onBack={() => setSelectedOrderId(null)}
-          onServed={() => {
+          onResolved={() => {
             setSelectedOrderId(null)
             setRefreshKey((k) => k + 1)
           }}
