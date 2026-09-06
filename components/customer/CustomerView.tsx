@@ -15,16 +15,33 @@ import PaymentButton from './PaymentButton'
 import CancelOrderButton from '../CancelOrderButton'
 
 export default function CustomerView() {
-  // Lazy initializers read sessionStorage synchronously on first render, so
-  // flipping the role toggle back to Customer (which remounts this component)
-  // resumes the in-progress order instead of asking for a name again.
-  const [customer, setCustomer] = useState<Customer | null>(() => loadCustomerSession().customer)
-  const [cart, setCart] = useState<Record<string, CartLine>>(() => loadCustomerSession().cart)
-  const [placedOrder, setPlacedOrder] = useState<Order | null>(() => loadCustomerSession().placedOrder)
+  // Start with the same empty state the server renders (server has no
+  // sessionStorage), then hydrate from it in an effect — effects only ever
+  // run in the browser, after React has already reconciled against the
+  // server-rendered HTML, so this can never cause a hydration mismatch.
+  // Reading sessionStorage directly in a useState initializer (the previous
+  // approach) ran during the client's first render too, before hydration
+  // completed — server said "no customer", client said "customer found",
+  // and React threw the mismatch above.
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [cart, setCart] = useState<Record<string, CartLine>>({})
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null)
+  const [hydrated, setHydrated] = useState(false)
+
+  /* eslint-disable react-hooks/set-state-in-effect -- deliberate: hydrate from sessionStorage only after mount, never during SSR/first render */
+  useEffect(() => {
+    const session = loadCustomerSession()
+    setCustomer(session.customer)
+    setCart(session.cart)
+    setPlacedOrder(session.placedOrder)
+    setHydrated(true)
+  }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
+    if (!hydrated) return // don't overwrite storage with empty defaults before we've read it
     saveCustomerSession({ customer, cart, placedOrder })
-  }, [customer, cart, placedOrder])
+  }, [hydrated, customer, cart, placedOrder])
 
   // Once an order exists, poll its live state — this is the source of truth
   // for status/served_at/is_paid, not anything cached in the session.
@@ -62,6 +79,10 @@ export default function CustomerView() {
     setCustomer(null)
     setCart({})
     setPlacedOrder(null)
+  }
+
+  if (!hydrated) {
+    return <p className="p-6 text-ink-soft">Loading…</p>
   }
 
   if (!customer) {
