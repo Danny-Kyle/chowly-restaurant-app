@@ -109,7 +109,9 @@ export default function CustomerView() {
             <OrderStatus order={liveOrder} items={items} />
 
             {liveOrder.status === 'Pending' && (
+              <div className='mb-4'>
               <CancelOrderButton orderId={liveOrder.order_id} cancelledBy="customer" onCancelled={refresh} />
+              </div>
             )}
 
             {liveOrder.status === 'Cancelled' ? (
@@ -118,7 +120,10 @@ export default function CustomerView() {
               </div>
             ) : (
               <>
+              <div className='pt-3 border-t border-line'>
                 <ComplaintRatingForm orderId={liveOrder.order_id} customerId={customer.customer_id} />
+                </div>
+                
                 {stage === 'Served' && (
                   <PaymentButton
                     orderId={liveOrder.order_id}
