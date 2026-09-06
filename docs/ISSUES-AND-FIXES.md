@@ -54,4 +54,16 @@ Each entry: what broke, why, what fixed it, where to find the fix.
 
 ---
 
+### 5. Hydration error on load: "the server rendered HTML didn't match the client"
+
+**Symptom:** A red `Uncaught Error: Hydration failed...` in the browser console right after the customer session feature (#4) was added, with React showing the server had rendered the "enter your name" screen while the client immediately tried to render the "track your order" screen instead.
+
+**Root cause:** The session-hydration code lived inside `useState`'s lazy initializer (`useState(() => loadCustomerSession().customer)`), which runs during render — not just on the client, but also as part of React's normal render pass. On the **server**, there's no `sessionStorage`, so it always rendered the empty/"enter your name" branch. On the **client's very first render** (the one React uses to compare against the server's HTML, before hydration is considered complete), `sessionStorage` *is* available, so if a session already existed, the client tried to paint a completely different tree than the server sent — the exact mismatch React was complaining about.
+
+**Fix:** Moved the `sessionStorage` read out of the initializer and into a `useEffect`, which only ever runs in the browser *after* hydration has already reconciled against the server's HTML. The component now always starts in the same neutral "Loading…" state on both server and client, then swaps in the real session a moment later — a normal post-mount update, not a hydration mismatch.
+
+**Commit:** `fix: hydrate customer session in an effect, not a useState initializer, to fix SSR mismatch`
+
+---
+
 *This file is updated as new issues come up during testing — check back before finalizing the report.*
