@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/errors'
 import * as menuService from '@/services/menuService'
 import { RESTAURANT_ID } from '@/lib/constants'
 
@@ -7,7 +8,7 @@ export async function GET() {
     const menu = await menuService.getMenuForRestaurant(RESTAURANT_ID)
     return NextResponse.json({ menu })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

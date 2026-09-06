@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/errors'
 import * as orderService from '@/services/orderService'
 import { RESTAURANT_ID } from '@/lib/constants'
 
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
     const orders = await orderService.getOrderQueue(RESTAURANT_ID, statuses)
     return NextResponse.json({ orders })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json(result)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

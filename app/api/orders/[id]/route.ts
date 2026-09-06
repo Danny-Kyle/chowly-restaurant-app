@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/errors'
 import * as orderService from '@/services/orderService'
 import { DEFAULT_WAITER_ID } from '@/lib/constants'
 
@@ -8,7 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const detail = await orderService.getOrderDetail(id)
     return NextResponse.json(detail)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

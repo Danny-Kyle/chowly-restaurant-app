@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/errors'
 import * as complaintRatingService from '@/services/complaintRatingService'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     return NextResponse.json({ rating })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

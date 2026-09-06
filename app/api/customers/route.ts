@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/errors'
 import * as customerService from '@/services/customerService'
 
 export async function POST(req: NextRequest) {
@@ -7,7 +8,7 @@ export async function POST(req: NextRequest) {
     const customer = await customerService.identifyCustomer(firstName, lastName, phoneNumber)
     return NextResponse.json({ customer })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = getErrorMessage(err)
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }
