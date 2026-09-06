@@ -1,22 +1,20 @@
 import { supabase } from '@/lib/supabaseClient'
-import { nextId } from '@/lib/ids'
+import { nextIds } from '@/lib/ids'
 
 export async function createOrderItems(
   orderId: string,
   lines: { menuItemId: string; quantity: number; unitPrice: number }[]
 ) {
-  const rows = []
-  for (const line of lines) {
-    const orderItemId = await nextId('order_items', 'order_item_id', 'OIT')
-    rows.push({
-      order_item_id: orderItemId,
-      order_id: orderId,
-      menu_item_id: line.menuItemId,
-      quantity: line.quantity,
-      unit_price: line.unitPrice,
-      subtotal: line.unitPrice * line.quantity,
-    })
-  }
+  const orderItemIds = await nextIds('order_items', 'order_item_id', 'OIT', lines.length)
+
+  const rows = lines.map((line, i) => ({
+    order_item_id: orderItemIds[i],
+    order_id: orderId,
+    menu_item_id: line.menuItemId,
+    quantity: line.quantity,
+    unit_price: line.unitPrice,
+    subtotal: line.unitPrice * line.quantity,
+  }))
 
   const { data, error } = await supabase.from('order_items').insert(rows).select()
   if (error) throw error
