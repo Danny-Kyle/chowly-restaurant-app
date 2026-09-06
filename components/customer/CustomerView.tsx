@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Customer, CartLine, MenuItem, Order } from '@/lib/types'
+import { loadCustomerSession, saveCustomerSession, clearCustomerSession } from '@/lib/session'
 import IdentifyCustomer from './IdentifyCustomer'
 import MenuBrowser from './MenuBrowser'
 import Cart from './Cart'
@@ -10,10 +11,17 @@ import ComplaintRatingForm from './ComplaintRatingForm'
 import PaymentButton from './PaymentButton'
 
 export default function CustomerView() {
-  const [customer, setCustomer] = useState<Customer | null>(null)
-  const [cart, setCart] = useState<Record<string, CartLine>>({})
-  const [placedOrder, setPlacedOrder] = useState<Order | null>(null)
-  const [isPaid, setIsPaid] = useState(false)
+  // Lazy initializers read sessionStorage synchronously on first render, so
+  // flipping the role toggle back to Customer (which remounts this component)
+  // resumes the in-progress order instead of asking for a name again.
+  const [customer, setCustomer] = useState<Customer | null>(() => loadCustomerSession().customer)
+  const [cart, setCart] = useState<Record<string, CartLine>>(() => loadCustomerSession().cart)
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(() => loadCustomerSession().placedOrder)
+  const [isPaid, setIsPaid] = useState(() => loadCustomerSession().isPaid)
+
+  useEffect(() => {
+    saveCustomerSession({ customer, cart, placedOrder, isPaid })
+  }, [customer, cart, placedOrder, isPaid])
 
   function addToCart(item: MenuItem) {
     setCart((prev) => {
@@ -41,14 +49,31 @@ export default function CustomerView() {
     setIsPaid(false)
   }
 
+  function switchCustomer() {
+    clearCustomerSession()
+    setCustomer(null)
+    setCart({})
+    setPlacedOrder(null)
+    setIsPaid(false)
+  }
+
   if (!customer) {
     return <IdentifyCustomer onIdentified={setCustomer} />
   }
 
+  const tableHeader = (
+    <div className="flex items-center justify-between mb-1">
+      <p className="text-ink-soft text-sm">Table for {customer.first_name}</p>
+      <button onClick={switchCustomer} className="text-xs text-ink-soft underline underline-offset-2">
+        Not you?
+      </button>
+    </div>
+  )
+
   if (placedOrder) {
     return (
       <div className="max-w-md mx-auto px-6 py-10 space-y-4">
-        <p className="text-ink-soft text-sm">Table for {customer.first_name}</p>
+        {tableHeader}
         <OrderStatus orderId={placedOrder.order_id} />
         <ComplaintRatingForm orderId={placedOrder.order_id} customerId={customer.customer_id} />
         <PaymentButton
@@ -68,7 +93,7 @@ export default function CustomerView() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-10 pb-32">
-      <p className="text-ink-soft text-sm mb-1">Table for {customer.first_name}</p>
+      {tableHeader}
       <h1 className="font-display text-2xl mb-6">Menu</h1>
       <MenuBrowser cart={cart} onAdd={addToCart} onRemove={removeFromCart} />
       <div className="mt-6">
