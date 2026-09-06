@@ -1,47 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import type { Order, OrderItem } from '@/lib/types'
+import { getDeliveryStage, secondsUntilServedDisplay } from '@/lib/deliveryStage'
+import { useNow } from '@/hooks/useNow'
 import { formatNaira, formatMinutes } from '@/lib/format'
 
-export default function OrderStatus({ orderId }: { orderId: string }) {
-  const [order, setOrder] = useState<Order | null>(null)
-  const [items, setItems] = useState<OrderItem[]>([])
+const STAGE_LABEL: Record<string, string> = {
+  Preparing: 'Preparing your order',
+  Delivering: 'On its way to your table',
+  Served: 'Served',
+  Cancelled: 'Cancelled',
+}
 
-  useEffect(() => {
-    let cancelled = false
+export default function OrderStatus({ order, items }: { order: Order; items: OrderItem[] }) {
+  const now = useNow()
+  const stage = getDeliveryStage(order, now)
+  const secondsLeft = secondsUntilServedDisplay(order, now)
 
-    async function load() {
-      const res = await fetch(`/api/orders/${orderId}`)
-      const data = await res.json()
-      if (!cancelled) {
-        setOrder(data.order)
-        setItems(data.items)
-      }
-    }
-
-    load()
-    const interval = setInterval(load, 5000) // pick up waiter updates without a manual refresh
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [orderId])
-
-  if (!order) return <p className="text-ink-soft">Loading order…</p>
+  const badgeClass =
+    stage === 'Served'
+      ? 'bg-accent-soft text-accent'
+      : stage === 'Cancelled'
+        ? 'bg-alert-soft text-alert'
+        : 'bg-line/40'
 
   return (
     <div className="ticket px-4 py-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-display text-lg">Order {order.order_id}</h3>
-        <span
-          className={`font-data text-xs uppercase px-2 py-1 rounded-sm ${
-            order.status === 'Served' ? 'bg-accent-soft text-accent' : 'bg-line/40'
-          }`}
-        >
-          {order.status}
+        <span className={`font-data text-xs uppercase px-2 py-1 rounded-sm ${badgeClass}`}>
+          {STAGE_LABEL[stage]}
         </span>
       </div>
+
+      {secondsLeft > 0 && (
+        <p className="text-xs text-ink-soft mb-2">Arriving at your table in about {secondsLeft}s…</p>
+      )}
+
       <ul className="space-y-1 mb-3 text-sm">
         {items.map((i) => (
           <li key={i.order_item_id} className="flex justify-between">
