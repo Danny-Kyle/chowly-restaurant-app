@@ -138,3 +138,24 @@ insert into menu_items values
 insert into waiters values ('WAI001','Bella','Zoey','0701-234-5678',null,'On Duty','RES001');
 insert into chefs values ('CHF001','Hilda','Baci','0701-234-5679','RES001');
 insert into bartenders values ('BTD001','Graham','Norton','0701-234-5680','RES001');
+
+-- Row Level Security ------------------------------------------------------
+-- This app has no login/auth system (per the brief — a simple role switch,
+-- not real authentication), so per-row access control doesn't apply here.
+-- All access rules are enforced in the service layer instead. Supabase
+-- enables RLS by default on new tables/projects, which blocks the anon
+-- key entirely until it's turned off (or given a permissive policy) —
+-- disabling it here is the deliberate, documented choice for this build.
+
+alter table restaurants disable row level security;
+alter table customers disable row level security;
+alter table waiters disable row level security;
+alter table chefs disable row level security;
+alter table bartenders disable row level security;
+alter table menus disable row level security;
+alter table menu_items disable row level security;
+alter table orders disable row level security;
+alter table order_items disable row level security;
+alter table payments disable row level security;
+alter table complaints disable row level security;
+alter table ratings disable row level security;
