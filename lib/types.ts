@@ -25,10 +25,12 @@ export type CartLine = { item: MenuItem; quantity: number }
 
 export type Order = {
   order_id: string
-  status: 'Pending' | 'Served'
+  status: 'Pending' | 'Served' | 'Cancelled'
   estimated_waiting_time: number
   total_order_amount: number
   is_paid: boolean
+  served_at: string | null
+  cancelled_by: 'customer' | 'waiter' | null
   customer_id: string
   customers?: { first_name: string; last_name: string | null }
   order_date: string

@@ -69,11 +69,13 @@ create table orders (
   order_id text primary key,
   order_time time default current_time,
   order_date date default current_date,
-  status text default 'Pending',              -- Pending | Served
+  status text default 'Pending' check (status in ('Pending','Served','Cancelled')),
   estimated_waiting_time integer,              -- minutes
   actual_preparation_duration integer,
   total_order_amount numeric,
   is_paid boolean default false,               -- ADDED: explicit paid flag (see note above)
+  served_at timestamptz,                       -- ADDED: when the waiter marked it served; drives the customer's simulated delivery timeline
+  cancelled_by text,                           -- ADDED: 'customer' | 'waiter', who cancelled it (if cancelled)
   customer_id text references customers(customer_id),
   restaurant_id text references restaurants(restaurant_id),
   waiter_id text references waiters(waiter_id)
@@ -159,3 +161,14 @@ alter table order_items disable row level security;
 alter table payments disable row level security;
 alter table complaints disable row level security;
 alter table ratings disable row level security;
+
+-- Migration: cancellation + simulated delivery timeline -------------------
+-- Run this against an EXISTING Supabase project (one you already created
+-- and seeded before this feature was added). Safe to run more than once.
+
+alter table orders add column if not exists served_at timestamptz;
+alter table orders add column if not exists cancelled_by text;
+
+alter table orders drop constraint if exists orders_status_check;
+alter table orders add constraint orders_status_check
+  check (status in ('Pending','Served','Cancelled'));

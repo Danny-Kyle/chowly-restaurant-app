@@ -101,6 +101,19 @@ export async function markServed(orderId: string, waiterId: string) {
   return orderRepository.markOrderServed(orderId, waiterId)
 }
 
+export async function cancelOrder(orderId: string, cancelledBy: 'customer' | 'waiter') {
+  const order = await orderRepository.findOrderById(orderId)
+
+  if (order.is_paid) {
+    throw new Error('This order has already been paid for and cannot be cancelled')
+  }
+  if (order.status !== 'Pending') {
+    throw new Error('Only an order that has not been served yet can be cancelled')
+  }
+
+  return orderRepository.markOrderCancelled(orderId, cancelledBy)
+}
+
 export async function payForOrder(orderId: string, amount: number) {
   const payment = await paymentRepository.createPayment(orderId, amount)
   const order = await orderRepository.markOrderPaid(orderId)

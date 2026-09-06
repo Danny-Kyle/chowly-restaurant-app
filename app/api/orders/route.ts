@@ -6,7 +6,7 @@ import { RESTAURANT_ID } from '@/lib/constants'
 export async function GET(req: NextRequest) {
   try {
     const statusParam = req.nextUrl.searchParams.get('status')
-    const statuses = statusParam ? statusParam.split(',') : ['Pending', 'Served']
+    const statuses = statusParam ? statusParam.split(',') : ['Pending', 'Served', 'Cancelled']
     const orders = await orderService.getOrderQueue(RESTAURANT_ID, statuses)
     return NextResponse.json({ orders })
   } catch (err) {

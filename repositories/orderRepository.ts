@@ -54,7 +54,19 @@ export async function findOrderById(orderId: string) {
 export async function markOrderServed(orderId: string, waiterId: string) {
   const { data, error } = await supabase
     .from('orders')
-    .update({ status: 'Served', waiter_id: waiterId })
+    .update({ status: 'Served', waiter_id: waiterId, served_at: new Date().toISOString() })
+    .eq('order_id', orderId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function markOrderCancelled(orderId: string, cancelledBy: 'customer' | 'waiter') {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status: 'Cancelled', cancelled_by: cancelledBy })
     .eq('order_id', orderId)
     .select()
     .single()

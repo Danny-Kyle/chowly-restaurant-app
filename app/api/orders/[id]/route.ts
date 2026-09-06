@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 }
 
-// Body: { action: 'assign', orderItemId, category, staffId } | { action: 'serve' }
+// Body: { action: 'assign', orderItemId, category, staffId } | { action: 'serve' } | { action: 'cancel', cancelledBy }
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -27,6 +27,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (body.action === 'serve') {
       const order = await orderService.markServed(id, DEFAULT_WAITER_ID)
+      return NextResponse.json({ order })
+    }
+
+    if (body.action === 'cancel') {
+      const order = await orderService.cancelOrder(id, body.cancelledBy)
       return NextResponse.json({ order })
     }
 
