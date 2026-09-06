@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react'
 import type { Customer, CartLine, MenuItem, Order } from '@/lib/types'
 import { loadCustomerSession, saveCustomerSession, clearCustomerSession } from '@/lib/session'
+import { useOrder } from '@/hooks/useOrder'
+import { useNow } from '@/hooks/useNow'
+import { getDeliveryStage } from '@/lib/deliveryStage'
 import IdentifyCustomer from './IdentifyCustomer'
 import MenuBrowser from './MenuBrowser'
 import Cart from './Cart'
 import OrderStatus from './OrderStatus'
 import ComplaintRatingForm from './ComplaintRatingForm'
 import PaymentButton from './PaymentButton'
+import CancelOrderButton from '../CancelOrderButton'
 
 export default function CustomerView() {
   // Lazy initializers read sessionStorage synchronously on first render, so
@@ -17,11 +21,16 @@ export default function CustomerView() {
   const [customer, setCustomer] = useState<Customer | null>(() => loadCustomerSession().customer)
   const [cart, setCart] = useState<Record<string, CartLine>>(() => loadCustomerSession().cart)
   const [placedOrder, setPlacedOrder] = useState<Order | null>(() => loadCustomerSession().placedOrder)
-  const [isPaid, setIsPaid] = useState(() => loadCustomerSession().isPaid)
 
   useEffect(() => {
-    saveCustomerSession({ customer, cart, placedOrder, isPaid })
-  }, [customer, cart, placedOrder, isPaid])
+    saveCustomerSession({ customer, cart, placedOrder })
+  }, [customer, cart, placedOrder])
+
+  // Once an order exists, poll its live state — this is the source of truth
+  // for status/served_at/is_paid, not anything cached in the session.
+  const { order: liveOrder, items, refresh } = useOrder(placedOrder?.order_id || '')
+  const now = useNow()
+  const stage = liveOrder ? getDeliveryStage(liveOrder, now) : null
 
   function addToCart(item: MenuItem) {
     setCart((prev) => {
@@ -46,7 +55,6 @@ export default function CustomerView() {
   function startNewOrder() {
     setCart({})
     setPlacedOrder(null)
-    setIsPaid(false)
   }
 
   function switchCustomer() {
@@ -54,7 +62,6 @@ export default function CustomerView() {
     setCustomer(null)
     setCart({})
     setPlacedOrder(null)
-    setIsPaid(false)
   }
 
   if (!customer) {
@@ -74,18 +81,40 @@ export default function CustomerView() {
     return (
       <div className="max-w-md mx-auto px-6 py-10 space-y-4">
         {tableHeader}
-        <OrderStatus orderId={placedOrder.order_id} />
-        <ComplaintRatingForm orderId={placedOrder.order_id} customerId={customer.customer_id} />
-        <PaymentButton
-          orderId={placedOrder.order_id}
-          amount={placedOrder.total_order_amount}
-          isPaid={isPaid}
-          onPaid={() => setIsPaid(true)}
-        />
-        {isPaid && (
-          <button onClick={startNewOrder} className="text-sm underline underline-offset-2 text-ink-soft">
-            Start a new order
-          </button>
+        {!liveOrder ? (
+          <p className="text-ink-soft">Loading order…</p>
+        ) : (
+          <>
+            <OrderStatus order={liveOrder} items={items} />
+
+            {liveOrder.status === 'Pending' && (
+              <CancelOrderButton orderId={liveOrder.order_id} cancelledBy="customer" onCancelled={refresh} />
+            )}
+
+            {liveOrder.status === 'Cancelled' ? (
+              <div className="ticket px-4 py-3 text-center text-alert font-medium">
+                This order was cancelled{liveOrder.cancelled_by ? ` by the ${liveOrder.cancelled_by}` : ''}.
+              </div>
+            ) : (
+              <>
+                <ComplaintRatingForm orderId={liveOrder.order_id} customerId={customer.customer_id} />
+                {stage === 'Served' && (
+                  <PaymentButton
+                    orderId={liveOrder.order_id}
+                    amount={liveOrder.total_order_amount}
+                    isPaid={liveOrder.is_paid}
+                    onPaid={refresh}
+                  />
+                )}
+              </>
+            )}
+
+            {(liveOrder.status === 'Cancelled' || liveOrder.is_paid) && (
+              <button onClick={startNewOrder} className="text-sm underline underline-offset-2 text-ink-soft">
+                Start a new order
+              </button>
+            )}
+          </>
         )}
       </div>
     )

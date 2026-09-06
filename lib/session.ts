@@ -6,10 +6,9 @@ type CustomerSession = {
   customer: Customer | null
   cart: Record<string, CartLine>
   placedOrder: Order | null
-  isPaid: boolean
 }
 
-const empty: CustomerSession = { customer: null, cart: {}, placedOrder: null, isPaid: false }
+const empty: CustomerSession = { customer: null, cart: {}, placedOrder: null }
 
 /**
  * This is deliberately sessionStorage, not a login: no password, nothing
