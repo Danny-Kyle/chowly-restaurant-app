@@ -31,10 +31,10 @@ export function loadCustomerSession(): CustomerSession {
 
 export function saveCustomerSession(session: CustomerSession) {
   if (typeof window === 'undefined') return
-  sessionStorage.setItem(KEY, JSON.stringify(session))
+  try { sessionStorage.setItem(KEY, JSON.stringify(session)) } catch { /* Storage can be disabled; in-memory ordering still works. */ }
 }
 
 export function clearCustomerSession() {
   if (typeof window === 'undefined') return
-  sessionStorage.removeItem(KEY)
+  try { sessionStorage.removeItem(KEY) } catch { /* Storage can be disabled. */ }
 }

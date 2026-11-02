@@ -1,22 +1,10 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 import { nextId } from '@/lib/ids'
 
-export async function findCustomerByName(firstName: string, lastName: string) {
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*')
-    .ilike('first_name', firstName)
-    .ilike('last_name', lastName || '')
-    .maybeSingle()
-
-  if (error) throw error
-  return data
-}
-
 export async function createCustomer(firstName: string, lastName: string, phoneNumber?: string) {
-  const customerId = await nextId('customers', 'customer_id', 'CUS')
+  const customerId = await nextId('CUS')
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('customers')
     .insert({
       customer_id: customerId,

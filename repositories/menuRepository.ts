@@ -1,7 +1,7 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 export async function findMenusByRestaurant(restaurantId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('menus')
     .select('*')
     .eq('restaurant_id', restaurantId)
@@ -12,7 +12,7 @@ export async function findMenusByRestaurant(restaurantId: string) {
 }
 
 export async function findAvailableItemsByRestaurant(restaurantId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('menu_items')
     .select('*, menus!inner(restaurant_id)')
     .eq('menus.restaurant_id', restaurantId)
@@ -23,7 +23,7 @@ export async function findAvailableItemsByRestaurant(restaurantId: string) {
 }
 
 export async function findMenuItemsByIds(menuItemIds: string[]) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('menu_items')
     .select('*')
     .in('menu_item_id', menuItemIds)

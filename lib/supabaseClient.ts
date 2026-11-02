@@ -1,13 +1,15 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+let client: SupabaseClient | undefined
 
-if (!url || !anonKey) {
-  throw new Error(
-    'Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
-  )
+// Used only by server-side repositories. Never use a NEXT_PUBLIC secret key.
+// Lazy creation lets the build run without access to a live database.
+export function getSupabase(): SupabaseClient {
+  if (typeof window !== 'undefined') throw new Error('The database client is server-only')
+  if (client) return client
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SECRET_KEY
+  if (!url || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SECRET_KEY on the server')
+  client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } })
+  return client
 }
-
-// Only ever imported by files in /repositories — nothing else should talk to Supabase directly.
-export const supabase = createClient(url, anonKey)

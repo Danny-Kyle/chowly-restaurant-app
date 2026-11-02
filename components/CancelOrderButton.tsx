@@ -29,7 +29,6 @@ export default function CancelOrderButton({
       onCancelled()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
-      setConfirming(false)
     } finally {
       setLoading(false)
     }

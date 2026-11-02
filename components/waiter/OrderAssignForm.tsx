@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Order, OrderItem, Staff } from '@/lib/types'
 import { formatNaira } from '@/lib/format'
 import CancelOrderButton from '../CancelOrderButton'
@@ -21,40 +21,38 @@ export default function OrderAssignForm({
   const [error, setError] = useState('')
   const [serving, setServing] = useState(false)
 
-  async function load() {
-    const [orderRes, staffRes] = await Promise.all([
-      fetch(`/api/orders/${orderId}`).then((r) => r.json()),
-      fetch('/api/staff').then((r) => r.json()),
-    ])
-    setOrder(orderRes.order)
-    setItems(orderRes.items)
-    setChefs(staffRes.chefs)
-    setBartenders(staffRes.bartenders)
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const load = useCallback(async () => {
+    try {
+      const [orderRes, staffRes] = await Promise.all([
+        fetch(`/api/orders/${encodeURIComponent(orderId)}`), fetch('/api/staff'),
+      ])
+      const [detail, staff] = await Promise.all([orderRes.json(), staffRes.json()])
+      if (!orderRes.ok) throw new Error(detail.error || 'Could not load order')
+      if (!staffRes.ok) throw new Error(staff.error || 'Could not load staff')
+      setOrder(detail.order)
+      setItems(detail.items)
+      setChefs(staff.chefs)
+      setBartenders(staff.bartenders)
+      setError('')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not load order')
+    }
   }, [orderId])
+
+  useEffect(() => { void load() }, [load])
 
   async function handleAssign(item: OrderItem, staffId: string) {
     setError('')
-    const res = await fetch(`/api/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'assign',
-        orderItemId: item.order_item_id,
-        category: item.menu_items?.category,
-        staffId,
-      }),
-    })
-    if (!res.ok) {
-      setError((await res.json()).error)
-      return
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign', orderItemId: item.order_item_id, staffId }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      await load()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Could not assign staff')
     }
-    load()
   }
 
   async function handleServe() {
@@ -75,14 +73,14 @@ export default function OrderAssignForm({
     }
   }
 
-  if (!order) return <p className="text-ink-soft">Loading order…</p>
+  if (!order) return <p role={error ? 'alert' : undefined} className="text-ink-soft">{error || 'Loading order…'}</p>
 
   return (
     <div>
       <button onClick={onBack} className="text-sm text-ink-soft underline underline-offset-2 mb-4">
         ← Back to queue
       </button>
-      <h2 className="font-display text-xl mb-1">Order {order.order_id}</h2>
+      <h2 className="font-display text-xl mb-1 break-all">Order {order.order_id}</h2>
       <p className="text-ink-soft text-sm mb-4">
         {order.customers?.first_name} {order.customers?.last_name} · {formatNaira(order.total_order_amount)}
       </p>

@@ -23,20 +23,12 @@ export default function ComplaintRatingForm({
     setLoading(true)
     setError('')
     try {
-      const [complaintRes, ratingRes] = await Promise.all([
-        fetch(`/api/orders/${orderId}/complaint`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customerId, complaintType, description }),
-        }),
-        fetch(`/api/orders/${orderId}/rating`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ratingScore, comments }),
-        }),
-      ])
-      if (!complaintRes.ok) throw new Error((await complaintRes.json()).error)
-      if (!ratingRes.ok) throw new Error((await ratingRes.json()).error)
+      const res = await fetch(`/api/orders/${orderId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId, complaintType, description, ratingScore, comments }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
       setSubmitted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

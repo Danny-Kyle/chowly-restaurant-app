@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getErrorMessage } from '@/lib/errors'
+import { apiError } from '@/lib/errors'
+import { readJson } from '@/lib/validation'
 import * as complaintRatingService from '@/services/complaintRatingService'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const { customerId, complaintType, description } = await req.json()
+    const { customerId, complaintType, description } = await readJson(req)
     const complaint = await complaintRatingService.fileComplaint({
       orderId: id,
       customerId,
@@ -14,7 +15,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     return NextResponse.json({ complaint })
   } catch (err) {
-    const message = getErrorMessage(err)
-    return NextResponse.json({ error: message }, { status: 400 })
+    return apiError(err)
   }
 }
