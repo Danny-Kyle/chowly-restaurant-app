@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 import { nextId } from '@/lib/ids'
 
 export async function createComplaint(input: {
@@ -7,9 +7,9 @@ export async function createComplaint(input: {
   complaintType: string
   description: string
 }) {
-  const complaintId = await nextId('complaints', 'complaint_id', 'CMP')
+  const complaintId = await nextId('CMP')
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('complaints')
     .insert({
       complaint_id: complaintId,

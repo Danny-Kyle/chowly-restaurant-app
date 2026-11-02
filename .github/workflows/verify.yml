@@ -1,0 +1,46 @@
+name: Verify Chowly
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'codex/**']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: chowly_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: chowly_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U chowly_test -d chowly_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://chowly_test:local-test-only@localhost:5432/chowly_test
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql
+      - run: python tests/test_database.py

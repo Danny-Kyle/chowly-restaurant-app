@@ -15,13 +15,17 @@ export default function MenuBrowser({
 }) {
   const [groups, setGroups] = useState<MenuGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     fetch('/api/menu')
-      .then((r) => r.json())
-      .then((data) => setGroups(data.menu))
+      .then(async (r) => { const data = await r.json(); if (!r.ok) throw new Error(data.error); return data })
+      .then((data) => { setGroups(data.menu); setError('') })
+      .catch((error) => setError(error instanceof Error ? error.message : 'Could not load data'))
       .finally(() => setLoading(false))
   }, [])
+
+  if (error) return <p role="alert" className="text-alert">{error}</p>
 
   if (loading) return <p className="text-ink-soft">Loading menu…</p>
 

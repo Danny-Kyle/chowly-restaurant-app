@@ -1,36 +1,37 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { Order, OrderItem } from '@/lib/types'
 
 export function useOrder(orderId: string) {
-  const [order, setOrder] = useState<Order | null>(null)
-  const [items, setItems] = useState<OrderItem[]>([])
-
+  const [detail, setDetail] = useState<{ id: string; order: Order | null; items: OrderItem[] }>({ id: '', order: null, items: [] })
+  const [error, setError] = useState('')
+  const activeId = useRef(orderId)
+  useEffect(() => { activeId.current = orderId }, [orderId])
   const refresh = useCallback(async () => {
-    const res = await fetch(`/api/orders/${orderId}`)
-    const data = await res.json()
-    setOrder(data.order)
-    setItems(data.items)
+    if (!orderId) return
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`)
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Could not load order')
+      if (activeId.current !== orderId) return
+      setDetail({ id: orderId, order: data.order, items: data.items })
+      setError('')
+    } catch (error) {
+      if (activeId.current === orderId) setError(error instanceof Error ? error.message : 'Could not load order')
+    }
   }, [orderId])
-
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const res = await fetch(`/api/orders/${orderId}`)
-      const data = await res.json()
-      if (!cancelled) {
-        setOrder(data.order)
-        setItems(data.items)
-      }
+    if (!orderId) return
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout>
+    async function poll() {
+      await refresh()
+      if (!stopped) timer = setTimeout(poll, 5000)
     }
-    load()
-    const interval = setInterval(load, 5000) // picks up waiter actions (assign/serve/cancel) without a manual refresh
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [orderId])
-
-  return { order, items, refresh }
+    void poll()
+    return () => { stopped = true; clearTimeout(timer); activeId.current = '' }
+  }, [orderId, refresh])
+  return { order: detail.id === orderId ? detail.order : null,
+    items: detail.id === orderId ? detail.items : [], error, refresh }
 }

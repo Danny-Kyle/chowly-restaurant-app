@@ -1,7 +1,7 @@
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 export async function findChefsByRestaurant(restaurantId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('chefs')
     .select('*')
     .eq('restaurant_id', restaurantId)
@@ -11,7 +11,7 @@ export async function findChefsByRestaurant(restaurantId: string) {
 }
 
 export async function findBartendersByRestaurant(restaurantId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('bartenders')
     .select('*')
     .eq('restaurant_id', restaurantId)

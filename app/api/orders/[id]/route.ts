@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getErrorMessage } from '@/lib/errors'
+import { apiError } from '@/lib/errors'
+import { readJson } from '@/lib/validation'
 import * as orderService from '@/services/orderService'
 import { DEFAULT_WAITER_ID } from '@/lib/constants'
 
@@ -9,19 +10,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const detail = await orderService.getOrderDetail(id)
     return NextResponse.json(detail)
   } catch (err) {
-    const message = getErrorMessage(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }
 
-// Body: { action: 'assign', orderItemId, category, staffId } | { action: 'serve' } | { action: 'cancel', cancelledBy }
+// Body: { action: 'assign', orderItemId, staffId } | { action: 'serve' } | { action: 'cancel', cancelledBy }
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const body = await req.json()
+    const body = await readJson(req)
 
     if (body.action === 'assign') {
-      const item = await orderService.assignPreparer(body.orderItemId, body.category, body.staffId)
+      const item = await orderService.assignPreparer(id, body.orderItemId, body.staffId)
       return NextResponse.json({ item })
     }
 
@@ -37,7 +37,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
-    const message = getErrorMessage(err)
-    return NextResponse.json({ error: message }, { status: 400 })
+    return apiError(err)
   }
 }

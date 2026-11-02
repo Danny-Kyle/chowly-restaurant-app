@@ -27,7 +27,7 @@ export default function OrderStatus({ order, items }: { order: Order; items: Ord
   return (
     <div className="ticket px-4 py-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-display text-lg">Order {order.order_id}</h3>
+        <h3 className="font-display text-lg break-all">Order {order.order_id}</h3>
         <span className={`font-data text-xs uppercase px-2 py-1 rounded-sm ${badgeClass}`}>
           {STAGE_LABEL[stage]}
         </span>

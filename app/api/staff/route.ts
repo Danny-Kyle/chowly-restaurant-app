@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getErrorMessage } from '@/lib/errors'
+import { apiError } from '@/lib/errors'
 import * as staffRepository from '@/repositories/staffRepository'
 import { RESTAURANT_ID } from '@/lib/constants'
 
@@ -11,7 +11,6 @@ export async function GET() {
     ])
     return NextResponse.json({ chefs, bartenders })
   } catch (err) {
-    const message = getErrorMessage(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return apiError(err)
   }
 }

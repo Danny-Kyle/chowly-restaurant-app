@@ -45,7 +45,7 @@ export default function CustomerView() {
 
   // Once an order exists, poll its live state — this is the source of truth
   // for status/served_at/is_paid, not anything cached in the session.
-  const { order: liveOrder, items, refresh } = useOrder(placedOrder?.order_id || '')
+  const { order: liveOrder, items, error: orderError, refresh } = useOrder(placedOrder?.order_id || '')
   const now = useNow()
   const stage = liveOrder ? getDeliveryStage(liveOrder, now) : null
 
@@ -102,6 +102,7 @@ export default function CustomerView() {
     return (
       <div className="max-w-md mx-auto px-6 py-10 space-y-4">
         {tableHeader}
+        {orderError && <p role="alert" className="text-alert">{orderError}</p>}
         {!liveOrder ? (
           <p className="text-ink-soft">Loading order…</p>
         ) : (
